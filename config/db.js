@@ -1,3 +1,4 @@
+const { underline } = require('colors');
 const mongoose = require('mongoose')
 
 const connectDb = async() => {
@@ -8,7 +9,7 @@ const connectDb = async() => {
         useUnifiedTopology: true 
     });
 
-    console.log(`MongoDB connected  : ${conn.connection.host}`.green.italic)
+    console.log(`MongoDB connected  : ${conn.connection.host}`.blue.bold.underline.italic)
 }
 
 module.exports = connectDb
