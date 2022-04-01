@@ -1,4 +1,4 @@
-const NodeGeocoder = require('node-geocoder')
+const NodeGeocoder = require('node-geocoder');
 const dotenv = require('dotenv');
 
 //load env files
