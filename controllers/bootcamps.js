@@ -16,7 +16,7 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
     }
 
     //array of fields to exclude
-    const removeFields = ['select', 'sort']
+    const removeFields = ['select', 'sort', 'page', 'limit']
 
     //loop over removeFields
     removeFields.forEach(param => delete reqQuery[param])
@@ -32,7 +32,7 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
     console.log(queryString)
 
     //filtering resource
-    query = Bootcamp.find(JSON.parse(queryString))
+    query = Bootcamp.find(JSON.parse(queryString)).populate('courses')
 
     //select fields
     if (req.query.select) {
@@ -49,11 +49,38 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
         query = query.sort('-createdAt')
     }
 
+    //pagination
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const startIndex = (page - 1) * limit;
+    const endIndex = (page) * limit;
+    const total = await Bootcamp.countDocuments()
+    query = query.skip(startIndex).limit(limit);
+
     //executing query
     const data = await query
+
+    //paginaiton results
+    const pagination = {};
+
+    if (endIndex < total) {
+        pagination.next = {
+            page: page + 1,
+            limit: limit
+        }
+    }
+
+    if (startIndex > 0) {
+        pagination.prev = {
+            page: page - 1,
+            limit: limit
+        }
+    }
+
     res.status(200).json({
         success: true,
         count: data.length,
+        pagination,
         data
     })
 })
@@ -114,11 +141,13 @@ exports.updateBootcamps = asyncHandler(async (req, res, next) => {
 // @route DELTE /api/v1/bootcamps/:id
 //@access private
 exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
-    const bootcamp = await Bootcamp.findByIdAndDelete(req.params.id)
+    const bootcamp = await Bootcamp.findById(req.params.id)
 
     if (!bootcamp) {
         return next(new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404))
     }
+
+    bootcamp.remove()
 
     res.status(200).json({
         success: true,
