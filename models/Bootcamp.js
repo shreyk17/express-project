@@ -5,46 +5,46 @@ const geocoder = require('../utils/geoCoder')
 
 const BootcampScehma = new mongoose.Schema({
 
-    name : {
-        type : String,
-        required: [true , 'Please add a name'],
-        unique : true,
-        trim : true,
-        maxlength : [150 , 'Name cannot be more than 150 characters'],
+    name: {
+        type: String,
+        required: [true, 'Please add a name'],
+        unique: true,
+        trim: true,
+        maxlength: [150, 'Name cannot be more than 150 characters'],
     },
 
-    slug : String,
+    slug: String,
 
-    description : {
-        type : String,
-        required: [true , 'Please add a name'],
-        maxlength : [500 , 'Name cannot be more than 500 characters'],
+    description: {
+        type: String,
+        required: [true, 'Please add a name'],
+        maxlength: [500, 'Name cannot be more than 500 characters'],
     },
 
-    website : {
-        type : String,
-        match : [
+    website: {
+        type: String,
+        match: [
             /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/,
             'Please use a valid URL with HTTP or HTTPS'
         ]
     },
 
-    phone : {
-        type : String,
-        maxlength : [10,'Phone number cannot be longer than 10 digits']
+    phone: {
+        type: String,
+        maxlength: [10, 'Phone number cannot be longer than 10 digits']
     },
 
-    email : {
-        type :String,
-        match : [
+    email: {
+        type: String,
+        match: [
             /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/,
             'Please enter valid email address'
         ]
     },
-    
+
     address: {
-        type : String,
-        required : [true , 'Please add an address']
+        type: String,
+        required: [true, 'Please add an address']
     },
 
     // location : {
@@ -86,11 +86,11 @@ const BootcampScehma = new mongoose.Schema({
         country: String
     },
 
-    careers : {
+    careers: {
         //array of string
-        type : [String],
-        required : true,
-        enum : [
+        type: [String],
+        required: true,
+        enum: [
             'Web Development',
             'Mobile Development',
             'UI/UX',
@@ -100,73 +100,99 @@ const BootcampScehma = new mongoose.Schema({
         ]
     },
 
-    averageRating : {
-        type : Number,
-        min : [1 , 'Rating must be at least 1'],
-        max : [10 , "Rating must cannnot be more than 10"],
+    averageRating: {
+        type: Number,
+        min: [1, 'Rating must be at least 1'],
+        max: [10, "Rating must cannnot be more than 10"],
     },
 
-    averageCost : {
-        type : Number
+    averageCost: {
+        type: Number
     },
 
-    photo  :{
-        type : String,
-        default : 'no-photo.jpeg'
+    photo: {
+        type: String,
+        default: 'no-photo.jpeg'
     },
 
-    housing : {
-        type : Boolean,
-        default : false
+    housing: {
+        type: Boolean,
+        default: false
     },
 
-    jobAssistance : {
-        type : Boolean,
-        default : false
+    jobAssistance: {
+        type: Boolean,
+        default: false
     },
 
-    jobGurrantee : {
-        type : Boolean,
-        default : false
+    jobGurrantee: {
+        type: Boolean,
+        default: false
     },
 
-    accepGI : {
-        type : Boolean,
-        default : false
+    accepGI: {
+        type: Boolean,
+        default: false
     },
 
-    createdAt : {
-        type : Date,
-        default : Date.now
+    createdAt: {
+        type: Date,
+        default: Date.now
     },
 
+}, {
+    toJSON: {
+        virtuals: true
+    },
+    toObject: {
+        virtuals: true
+    }
 });
 
 //create bootcamp slug from the name
-BootcampScehma.pre('save' , function(next){
-    console.log('Slugify ran' , this.name.red.bold);
-    this.slug = slugify(this.name , { lower : true })
+BootcampScehma.pre('save', function (next) {
+    console.log('Slugify ran', this.name.red.bold);
+    this.slug = slugify(this.name, {
+        lower: true
+    })
     next()
 })
 
 
 
-BootcampScehma.pre('save', async function(next) {
-  const loc = await geocoder.geocode(this.address);
-  this.location = {
-    type: 'Point',
-    coordinates: [loc[0].longitude, loc[0].latitude],
-    formattedAddress: loc[0].formattedAddress,
-    street: loc[0].streetName,
-    city: loc[0].city,
-    state: loc[0].stateCode,
-    zipcode: loc[0].zipcode,
-    country: loc[0].countryCode
-  };
+BootcampScehma.pre('save', async function (next) {
+    const loc = await geocoder.geocode(this.address);
+    this.location = {
+        type: 'Point',
+        coordinates: [loc[0].longitude, loc[0].latitude],
+        formattedAddress: loc[0].formattedAddress,
+        street: loc[0].streetName,
+        city: loc[0].city,
+        state: loc[0].stateCode,
+        zipcode: loc[0].zipcode,
+        country: loc[0].countryCode
+    };
 
-  // Do not save address in DB
-  this.address = undefined;
-  next();
+    // Do not save address in DB
+    this.address = undefined;
+    next();
 });
 
-module.exports = mongoose.model("Bootcamp" , BootcampScehma)
+// Cascade delete courses when a bootcamp is deleted
+BootcampScehma.pre('remove', async function (next) {
+    console.log(`Courses been removed from bootcamp ${this._id}`)
+    await this.model('Course').deleteMany({
+        bootcamp: this._id
+    })
+    next()
+})
+
+//Reverse populate with virtuals
+BootcampScehma.virtual('courses', {
+    ref: 'Course',
+    localField: '_id',
+    foreignField: 'bootcamp',
+    justOne: false
+})
+
+module.exports = mongoose.model("Bootcamp", BootcampScehma)
