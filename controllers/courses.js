@@ -36,7 +36,7 @@ exports.getCourse = asyncHandler(async (req, res, next) => {
         select: 'name description'
     });
 
-    console.log(course)
+    // console.log(course)
 
     if (!course) {
         return next(new ErrorResponse(`No course with id of ${req.params.id}`), 404)
@@ -58,7 +58,7 @@ exports.createCourse = asyncHandler(async (req, res, next) => {
 
     const bootcamp = await Bootcamp.findById(req.params.bootcampId)
 
-    console.log(bootcamp)
+    // console.log(bootcamp)
 
     if (!bootcamp) {
         return next(new ErrorResponse(`No bootcamp with id of ${req.params.bootcampId}`), 404)
@@ -80,7 +80,7 @@ exports.updateCourse = asyncHandler(async (req, res, next) => {
 
     let course = await Course.findById(req.params.id)
 
-    console.log(course)
+    // console.log(course)
 
     if (!course) {
         return next(new ErrorResponse(`No course with id of ${req.params.course}`), 404)
@@ -105,7 +105,7 @@ exports.deleteCourse = asyncHandler(async (req, res, next) => {
 
     const course = await Course.findById(req.params.id)
 
-    console.log(course)
+    // console.log(course)
 
     if (!course) {
         return next(new ErrorResponse(`No course with id of ${req.params.course}`), 404)

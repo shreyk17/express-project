@@ -17,12 +17,12 @@ const advancedResults = (model, populate) => async (req, res, next) => {
     //create query string
     let queryString = JSON.stringify(reqQuery)
 
-    console.log(req.query)
+    // console.log(req.query)
 
     //create operator like gte , gt etc
     queryString = queryString.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
 
-    console.log(queryString)
+    // console.log(queryString)
 
     //filtering resource
     query = model.find(JSON.parse(queryString))
@@ -30,7 +30,7 @@ const advancedResults = (model, populate) => async (req, res, next) => {
     //select fields
     if (req.query.select) {
         const fields = req.query.select.split(",").join(' ')
-        console.log(fields)
+        // console.log(fields)
         query = query.select(fields)
     }
 
