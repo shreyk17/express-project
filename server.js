@@ -8,6 +8,8 @@ const morgan = require('morgan')
 const connectDb = require('./config/db')
 const colors = require('colors')
 const errorHandler = require('./middlewares/error')
+const fileupload = require('express-fileupload')
+const path = require('path')
 
 //load env files
 dotenv.config({
@@ -29,6 +31,12 @@ if (process.env.NODE_ENV === 'development') {
 } else {
     app.use(logger)
 }
+
+//file upload
+app.use(fileupload())
+
+//set static folder
+app.use(express.static(path.join(__dirname, 'public')))
 
 //mount routers
 app.use('/api/v1/bootcamps', bootcamps)
