@@ -11,6 +11,7 @@ const colors = require('colors')
 const errorHandler = require('./middlewares/error')
 const fileupload = require('express-fileupload')
 const path = require('path')
+const cookieParser = require('cookie-parser')
 
 //load env files
 dotenv.config({
@@ -35,6 +36,9 @@ if (process.env.NODE_ENV === 'development') {
 
 //file upload
 app.use(fileupload())
+
+//cookie parser
+app.use(cookieParser())
 
 //set static folder
 app.use(express.static(path.join(__dirname, 'public')))
