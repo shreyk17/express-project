@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const req = require('express/lib/request');
 const bootcamps = require('./routes/bootcamps')
 const courses = require('./routes/courses')
+const auth = require('./routes/auth')
 const logger = require('./middlewares/Logger')
 const morgan = require('morgan')
 const connectDb = require('./config/db')
@@ -10,6 +11,7 @@ const colors = require('colors')
 const errorHandler = require('./middlewares/error')
 const fileupload = require('express-fileupload')
 const path = require('path')
+const cookieParser = require('cookie-parser')
 
 //load env files
 dotenv.config({
@@ -35,12 +37,16 @@ if (process.env.NODE_ENV === 'development') {
 //file upload
 app.use(fileupload())
 
+//cookie parser
+app.use(cookieParser())
+
 //set static folder
 app.use(express.static(path.join(__dirname, 'public')))
 
 //mount routers
 app.use('/api/v1/bootcamps', bootcamps)
 app.use('/api/v1/courses', courses)
+app.use('/api/v1/auth', auth)
 
 
 const port = process.env.PORT || 5000;

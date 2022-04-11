@@ -9,6 +9,10 @@ const {
     bootcampPhotoUpload
 } = require('../controllers/bootcamps')
 
+const {
+    protect
+} = require('../middlewares/auth')
+
 const advancedResults = require('../middlewares/advancedResults')
 const Bootcamp = require('../models/Bootcamp')
 
@@ -22,9 +26,9 @@ router.use('/:bootcampId/courses', courseRouter)
 
 router.route('/radius/:zicode/:distance').get(getBootcampsInRadius)
 
-router.route('/:id/photo').put(bootcampPhotoUpload)
+router.route('/:id/photo').put(protect, bootcampPhotoUpload)
 
-router.route('/').get(advancedResults(Bootcamp, 'courses'), getBootcamps).post(createBootcamp)
-router.route('/:id').get(getBootcamp).put(updateBootcamps).delete(deleteBootcamp)
+router.route('/').get(advancedResults(Bootcamp, 'courses'), getBootcamps).post(protect, createBootcamp)
+router.route('/:id').get(getBootcamp).put(protect, updateBootcamps).delete(protect, deleteBootcamp)
 
 module.exports = router
