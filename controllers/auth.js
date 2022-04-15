@@ -1,6 +1,8 @@
 const ErrorResponse = require('../utils/errorResponse')
 const asyncHandler = require('../middlewares/async')
 const User = require('../models/User')
+const sendEmail = require('../utils/sendEmail')
+const crypto = require('crypto')
 
 // @desc  REGISTER USER
 // @route GET /api/v1/auth/register
@@ -63,6 +65,144 @@ exports.login = asyncHandler(async (req, res, next) => {
 
 })
 
+// @desc  Current logged in User
+// @route POST /api/v1/auth/me
+// @access private
+exports.getLoggedInUser = asyncHandler(async (req, res, next) => {
+    const user = await User.findById(req.user.id)
+
+    res.status(200).json({
+        success: true,
+        data: user
+    })
+})
+
+
+// @desc  Forget Password
+// @route POST /api/v1/auth/forgotpassword
+// @access public
+exports.forgotPassword = asyncHandler(async (req, res, next) => {
+
+    const user = await User.findOne({
+        email: req.body.email
+    })
+
+    if (!user) {
+        return next(new ErrorResponse(`There is no user with ${req.body.email}`, 404))
+    }
+
+    //reset token
+    const resetToken = user.getResetPasswordToken()
+
+    console.log("---Reset Token---" + resetToken)
+
+    await user.save({
+        validateBeforSave: false
+    })
+
+    // create reset url 
+    const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/auth/resetpassword/${resetToken}`
+
+    const message = `Reset link is ${resetUrl}`;
+
+    try {
+        await sendEmail({
+            email: user.email,
+            subject: 'Password reset token',
+            message
+        })
+
+        res.status(200).json({
+            success: true,
+            data: "Email sent successfully."
+        })
+    } catch (error) {
+        console.log(error)
+        user.resetPasswordToken = undefined
+        user.resetPasswordExpire = undefined
+
+        await user.save({
+            validateBeforSave: false
+        })
+
+        return next(new ErrorResponse(`Email could not be sent.`, 500))
+    }
+
+    res.status(200).json({
+        success: true,
+        data: user
+    })
+})
+
+// @desc  reset password
+// @route PUT /api/v1/auth/resetpassword/:resettoken
+// @access public
+exports.resetPassword = asyncHandler(async (req, res, next) => {
+
+    const resetPasswordToken = crypto.createHash('sha256').update(req.params.resetToken).digest('hex');
+
+    const user = await User.findOne({
+        resetPasswordToken,
+        resetPasswordExpire: {
+            $gt: Date.now()
+        }
+    })
+
+    if (!user) {
+        return next(new ErrorResponse(`Invalid token`, 400))
+    }
+
+    //set the new password
+    user.password = req.body.password;
+
+    user.resetPasswordToken = undefined
+    user.resetPasswordExpire = undefined
+
+    await user.save()
+
+    sendTokenResponse(user, 200, res)
+})
+
+
+// @desc  Update user details
+// @route PUT /api/v1/auth/updatedetails
+// @access private
+exports.updateDetails = asyncHandler(async (req, res, next) => {
+
+    const fieldsToUpdate = {
+        name: req.body.name,
+        email: req.body.email
+    }
+
+    const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
+        new: true,
+        runValidators: true
+    })
+
+    res.status(200).json({
+        success: true,
+        data: user
+    })
+})
+
+// @desc  Update Password
+// @route PUT /api/v1/auth/updatepassword
+// @access private
+exports.updatePassword = asyncHandler(async (req, res, next) => {
+
+    const user = await User.findById(req.user.id).select('+password')
+
+    // check current password
+    if (!(await user.matchPassword(req.body.currentPassword))) {
+        return next(new ErrorResponse(`Password is incorrect`, 401))
+    }
+
+    user.password = req.body.newPassword
+
+    await user.save()
+
+    sendTokenResponse(user, 200, res);
+})
 
 //get token from model , create cookie & send res
 const sendTokenResponse = (user, statusCode, res) => {
@@ -83,15 +223,3 @@ const sendTokenResponse = (user, statusCode, res) => {
         token
     })
 }
-
-// @desc  Current logged in User
-// @route POST /api/v1/auth/me
-// @access private
-exports.getLoggedInUser = asyncHandler(async (req, res, next) => {
-    const user = await User.findById(req.user.id)
-
-    res.status(200).json({
-        success: true,
-        data: user
-    })
-})
