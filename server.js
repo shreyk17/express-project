@@ -4,6 +4,7 @@ const req = require('express/lib/request');
 const bootcamps = require('./routes/bootcamps')
 const courses = require('./routes/courses')
 const auth = require('./routes/auth')
+const user = require('./routes/users')
 const logger = require('./middlewares/Logger')
 const morgan = require('morgan')
 const connectDb = require('./config/db')
@@ -47,6 +48,7 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.use('/api/v1/bootcamps', bootcamps)
 app.use('/api/v1/courses', courses)
 app.use('/api/v1/auth', auth)
+app.use('/api/v1/users', user)
 
 
 const port = process.env.PORT || 5000;
