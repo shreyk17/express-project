@@ -1,6 +1,6 @@
 const express = require('express')
 const dotenv = require('dotenv');
-const req = require('express/lib/request');
+const cors = require('cors');
 const bootcamps = require('./routes/bootcamps')
 const courses = require('./routes/courses')
 const auth = require('./routes/auth')
@@ -14,6 +14,11 @@ const errorHandler = require('./middlewares/error')
 const fileupload = require('express-fileupload')
 const path = require('path')
 const cookieParser = require('cookie-parser')
+const mongoSanitize = require('express-mongo-sanitize')
+const helmet = require('helmet')
+const xss = require('xss-clean')
+const rateLimit = require('express-rate-limit')
+const hpp = require('hpp')
 
 //load env files
 dotenv.config({
@@ -38,6 +43,29 @@ if (process.env.NODE_ENV === 'development') {
 
 //file upload
 app.use(fileupload())
+
+//mongo sanitize 
+app.use(mongoSanitize())
+
+//helmet
+app.use(helmet())
+
+//xss clean
+app.use(xss())
+
+//enable cors
+app.use(cors())
+
+//rate limiting
+const limiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 100
+})
+
+app.use(limiter)
+
+//hpp
+app.use(hpp())
 
 //cookie parser
 app.use(cookieParser())
